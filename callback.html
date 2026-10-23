@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9 Sạch</title>
+<!-- DÁN THẺ META XÁC MINH TÊN MIỀN CỦA ZALO VÀO ĐÂY NẾU CẦN -->
+<style>
+  body{font-family:Arial,sans-serif;background:#f6f1e7;margin:0;padding:24px;text-align:center;color:#2b2b2b}
+  .box{max-width:420px;margin:40px auto;background:#fff;border-radius:16px;padding:28px 22px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+<div class="box" id="msg">Đang xử lý, vui lòng chờ...</div>
+
+<script>
+// ====== SỬA 1 DÒNG NÀY ======
+const EXEC_URL = 'https://script.google.com/macros/s/XXXX/exec'; // link /exec của Apps Script
+// ============================
+
+(function(){
+  const q = new URLSearchParams(location.search);
+  const code = q.get('code');
+  const state = q.get('state');
+  const box = document.getElementById('msg');
+
+  if (!code || !state) {
+    box.textContent = 'Bạn chưa hoàn tất xác nhận. Vui lòng quét lại QR để thử lại.';
+    return;
+  }
+  const raw = localStorage.getItem('zl_' + state);
+  if (!raw) {
+    box.textContent = 'Phiên xác nhận không hợp lệ hoặc đã hết hạn. Vui lòng quét lại QR.';
+    return;
+  }
+  localStorage.removeItem('zl_' + state);
+  const s = JSON.parse(raw);
+  if (Date.now() - s.t > 10 * 60 * 1000) {
+    box.textContent = 'Phiên xác nhận đã hết hạn. Vui lòng quét lại QR.';
+    return;
+  }
+
+  location.replace(EXEC_URL
+    + '?code=' + encodeURIComponent(code)
+    + '&v=' + encodeURIComponent(s.v)
+    + '&src=' + encodeURIComponent(s.src));
+})();
+</script>
+</body>
+</html>
