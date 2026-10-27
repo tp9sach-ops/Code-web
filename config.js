@@ -5,7 +5,7 @@
 export const CONFIG = {
   /* ===== DỮ LIỆU ===== */
   // Dán URL Web App của Google Apps Script (kết thúc bằng /exec). Để trống = dùng data/products.json + đặt hàng DEMO.
-  gasUrl: '',
+  gasUrl: 'https://script.google.com/macros/s/AKfycbx2jD8jfKQVNYNKoTst6Fsgwhu18d6M9zdriYAfTmiYw9Vqi6EfEEhx8KGiANZXC-jOxA/exec',
   localJson: './data/products.json',
   refreshMs: 60000, // tự cập nhật tồn kho mỗi 60 giây
 
