@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>9 Sạch — Tủ bánh hôm nay</title>
+  <meta name="description" content="Tủ bánh hôm nay của 9 Sạch: xem bánh còn hàng, chọn bánh trên vòng tròn 3D và đặt ngay.">
+  <meta name="theme-color" content="#f6efdf">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    :root {
+      --green: #1f5a3a; --gold: #e0a82e; --cream: #f6efdf;
+      --c1: #fbf6ea; --c2: #efe3c6; --ink: #1f5a3a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: var(--cream); }
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-stopped { overflow: hidden; }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: var(--green); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    button { font-family: inherit; }
+
+    /* ===== Nền gradient đổi theo màu bánh ===== */
+    #bg { position: fixed; inset: 0; z-index: 0; background: radial-gradient(120% 90% at 50% 35%, var(--c1) 0%, var(--c2) 100%); }
+
+    /* ===== Sân khấu được ghim ===== */
+    #stage { position: relative; height: 100vh; overflow: hidden; z-index: 1; }
+    #gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; touch-action: pan-y; display: block; }
+
+    /* Tiêu đề phía SAU tủ */
+    #hero-title { position: absolute; left: 0; right: 0; top: 9vh; z-index: 1; text-align: center; pointer-events: none; padding: 0 4vw; will-change: transform, opacity; }
+    #hero-title h1 { font-weight: 900; font-size: clamp(46px, 11vw, 170px); line-height: .9; letter-spacing: -.035em; color: var(--green); }
+    #hero-sub { margin-top: 1.2vh; font-weight: 700; font-size: clamp(14px, 1.6vw, 22px); color: #a87a10; letter-spacing: .04em; }
+
+    /* Tên bánh khổng lồ phía SAU bánh */
+    #giant { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 3vw 12vh; opacity: 0; pointer-events: none; }
+    #giant-text { font-weight: 900; text-transform: uppercase; line-height: .9; letter-spacing: -.03em; text-align: center; color: var(--ink); opacity: .92; max-width: 96vw; text-wrap: balance; will-change: transform, opacity; }
+
+    /* Nhãn tầng nổi */
+    #labels { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+    .lbl { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; max-width: 124px; padding: 4px 9px; border-radius: 10px; background: rgba(255,255,255,.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 4px 14px rgba(0,0,0,.12); font-size: 12px; line-height: 1.25; text-align: center; will-change: transform; }
+    .lbl b { font-weight: 800; max-width: 106px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #14301f; }
+    .lbl span { font-weight: 700; color: var(--green); }
+    .lbl.low { background: var(--gold); box-shadow: 0 6px 18px rgba(224,168,46,.55); }
+    .lbl.low b, .lbl.low span { color: #3a2a00; }
+    .lbl.out { background: rgba(38,38,38,.78); }
+    .lbl.out b, .lbl.out span { color: #fff; }
+
+    #hint { position: absolute; left: 0; right: 0; bottom: 3.5vh; z-index: 4; text-align: center; font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: rgba(31,90,58,.75); pointer-events: none; }
+    #hint::after { content: ''; display: block; width: 2px; height: 28px; margin: 8px auto 0; background: linear-gradient(var(--green), transparent); animation: drip 1.6s infinite; }
+    @keyframes drip { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+    /* Thông tin bánh + nút đặt */
+    #info { position: absolute; left: 0; right: 0; bottom: 12vh; z-index: 4; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px; opacity: 0; pointer-events: none; }
+    #info.on { pointer-events: auto; }
+    #info-body { display: flex; flex-direction: column; align-items: center; will-change: transform, opacity; }
+    #info-price { font-weight: 900; font-size: clamp(26px, 3.4vw, 44px); color: var(--ink); }
+    #info-desc { max-width: 520px; margin-top: 4px; font-size: clamp(14px, 1.4vw, 17px); color: rgba(20,48,31,.8); }
+    .stock { display: inline-block; margin-top: 8px; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; background: rgba(31,90,58,.12); color: var(--green); }
+    .stock.low { background: var(--gold); color: #3a2a00; }
+    .stock.out { background: #3b3b3b; color: #fff; }
+    .btn { cursor: pointer; border: 0; border-radius: 999px; padding: 14px 38px; margin-top: 14px; font-weight: 800; font-size: 16px; background: var(--green); color: #fff6dc; box-shadow: 0 10px 30px rgba(31,90,58,.28); transition: transform .2s, box-shadow .2s, background .2s; }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); background: #174a2f; box-shadow: 0 14px 34px rgba(31,90,58,.34); }
+    .btn:disabled { background: #8d8d8d; cursor: not-allowed; box-shadow: none; }
+
+    /* Thanh tiến trình + mũi tên */
+    #pager { position: absolute; left: 0; right: 0; bottom: 3.5vh; z-index: 4; display: flex; align-items: center; justify-content: center; gap: 14px; opacity: 0; pointer-events: none; }
+    #pager.on { pointer-events: auto; }
+    #pager .arrow { width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(31,90,58,.55); background: rgba(255,255,255,.55); color: var(--green); font-size: 18px; font-weight: 800; cursor: pointer; transition: background .2s, color .2s; }
+    #pager .arrow:hover { background: var(--green); color: #fff; }
+    #dots { display: flex; gap: 8px; align-items: center; }
+    .dot { width: 9px; height: 9px; border-radius: 99px; border: 0; padding: 0; background: rgba(31,90,58,.3); cursor: pointer; transition: width .3s, background .3s; }
+    .dot.on { width: 26px; background: var(--green); }
+    #bar { position: absolute; left: 50%; bottom: -14px; width: min(240px, 50vw); height: 3px; transform: translateX(-50%); background: rgba(31,90,58,.15); border-radius: 3px; overflow: hidden; }
+    #bar-fill { display: block; width: 100%; height: 100%; background: var(--gold); transform-origin: left; transform: scaleX(0); }
+    #pager-inner { position: relative; display: flex; align-items: center; gap: 14px; }
+
+    /* Màn hình chờ */
+    #loader { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: var(--cream); font-weight: 800; color: var(--green); font-size: 18px; letter-spacing: .04em; transition: opacity .6s; }
+    #loader.done { opacity: 0; pointer-events: none; }
+
+    /* Modal đặt hàng */
+    .modal { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(20,30,24,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .22s; }
+    .modal[hidden] { display: none; }
+    .modal.open { opacity: 1; }
+    .modal-card { position: relative; width: min(440px, 100%); max-height: 92vh; overflow: auto; padding: 26px 24px 22px; border-radius: 22px; background: #fffaf0; box-shadow: 0 30px 80px rgba(0,0,0,.3); transform: translateY(14px) scale(.98); transition: transform .25s; }
+    .modal.open .modal-card { transform: none; }
+    .m-close { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border: 0; background: transparent; font-size: 26px; cursor: pointer; color: var(--green); }
+    .modal-card h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+    .m-product { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-bottom: 14px; border-radius: 12px; background: rgba(224,168,46,.18); font-weight: 700; }
+    .modal-card label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; color: #14301f; }
+    .modal-card input, .modal-card textarea { display: block; width: 100%; margin-top: 4px; padding: 11px 12px; border: 1.5px solid rgba(31,90,58,.25); border-radius: 12px; background: #fff; font: 500 15px 'Be Vietnam Pro', sans-serif; color: #14301f; }
+    .modal-card input:focus, .modal-card textarea:focus { outline: 0; border-color: var(--green); box-shadow: 0 0 0 3px rgba(31,90,58,.15); }
+    .m-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
+    .qty { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .qty button { width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid rgba(31,90,58,.3); background: #fff; font-size: 20px; font-weight: 800; cursor: pointer; color: var(--green); }
+    .qty input { width: 56px; margin: 0; text-align: center; }
+    .m-total { text-align: right; font-size: 13px; font-weight: 700; }
+    .m-total b { display: block; font-size: 22px; font-weight: 900; color: var(--green); }
+    .hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
+    #m-msg { min-height: 20px; margin: 4px 0 8px; font-size: 14px; font-weight: 700; }
+    #m-msg.err { color: #b3261e; }
+    #m-msg.ok { color: var(--green); font-size: 16px; line-height: 1.4; }
+    #m-submit { width: 100%; margin-top: 0; }
+    #order-form.sent > *:not(#m-msg) { display: none; }
+
+    /* Fallback 2D */
+    #fallback { position: relative; z-index: 2; min-height: 100vh; padding: 6vh 0 4vh; text-align: center; }
+    #fallback[hidden] { display: none; }
+    .fb-head h1 { font-weight: 900; font-size: clamp(38px, 9vw, 90px); letter-spacing: -.03em; line-height: .95; }
+    .fb-head p { margin-top: 8px; font-weight: 700; color: #a87a10; }
+    .fb-track { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4vh 12vw 3vh; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .fb-track::-webkit-scrollbar { display: none; }
+    .fb-card { flex: 0 0 min(76vw, 320px); scroll-snap-align: center; padding: 20px 16px 22px; border-radius: 26px; background: rgba(255,255,255,.6); box-shadow: 0 16px 40px rgba(0,0,0,.1); }
+    .fb-art { width: 70%; aspect-ratio: 1; margin: 0 auto 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 76px; box-shadow: 0 18px 30px rgba(0,0,0,.18); overflow: hidden; }
+    .fb-art img { width: 100%; height: 100%; object-fit: contain; }
+    .fb-card h2 { font-weight: 900; font-size: 22px; text-transform: uppercase; color: var(--ink); }
+    .fb-price { font-weight: 900; font-size: 22px; margin-top: 4px; }
+    .fb-desc { font-size: 14px; margin: 4px 0; color: rgba(20,48,31,.8); }
+    .fb-hint { font-size: 13px; font-weight: 700; opacity: .7; }
+
+    /* ===== Mobile (< 768px) ===== */
+    @media (max-width: 767px) {
+      #hero-title { top: 7vh; }
+      #info { bottom: calc(150px + env(safe-area-inset-bottom)); }
+      #btn-order { position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 8; margin: 0; padding: 16px; opacity: 0; pointer-events: none; }
+      body.ring #btn-order { opacity: 1; pointer-events: auto; }
+      #pager { bottom: calc(92px + env(safe-area-inset-bottom)); }
+      #pager .arrow { width: 34px; height: 34px; }
+      .lbl { font-size: 10px; padding: 3px 7px; max-width: 92px; }
+      .lbl b { max-width: 78px; }
+    }
+    @media (prefers-reduced-motion: reduce) { #hint::after { animation: none; } }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+
+  <main id="stage">
+    <div id="hero-title">
+      <h1>Tủ bánh hôm nay</h1>
+      <p id="hero-sub">Cập nhật lúc --:--</p>
+    </div>
+
+    <div id="giant" aria-hidden="true"><span id="giant-text"></span></div>
+
+    <canvas id="gl" aria-label="Tủ bánh 3D"></canvas>
+    <div id="labels"></div>
+
+    <div id="hint">Cuộn xuống để mở tủ</div>
+
+    <section id="info" aria-live="polite">
+      <div id="info-body">
+        <p id="info-price"></p>
+        <p id="info-desc"></p>
+        <span id="info-stock" class="stock"></span>
+      </div>
+      <button id="btn-order" class="btn" type="button">Đặt Ngay</button>
+    </section>
+
+    <nav id="pager" aria-label="Chọn bánh">
+      <div id="pager-inner">
+        <button id="prev" class="arrow" type="button" aria-label="Bánh trước">←</button>
+        <div id="dots"></div>
+        <button id="next" class="arrow" type="button" aria-label="Bánh sau">→</button>
+        <div id="bar"><i id="bar-fill"></i></div>
+      </div>
+    </nav>
+  </main>
+
+  <div id="fallback" hidden></div>
+  <div id="loader">Đang mở tủ bánh…</div>
+
+  <div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="modal-card">
+      <button class="m-close" id="m-close" type="button" aria-label="Đóng">×</button>
+      <h2 id="m-title">Đặt bánh</h2>
+      <div class="m-product"><span id="m-name"></span><b id="m-price"></b></div>
+      <form id="order-form" novalidate>
+        <label>Họ tên <input name="name" required autocomplete="name"></label>
+        <label>Số điện thoại <input name="phone" required inputmode="tel" autocomplete="tel"></label>
+        <label>Địa chỉ nhận / cửa hàng <input name="address" autocomplete="street-address"></label>
+        <div class="m-row">
+          <label>Số lượng
+            <div class="qty">
+              <button type="button" id="q-minus" aria-label="Giảm">−</button>
+              <input name="qty" value="1" readonly>
+              <button type="button" id="q-plus" aria-label="Tăng">+</button>
+            </div>
+          </label>
+          <div class="m-total">Tổng cộng <b id="m-total"></b></div>
+        </div>
+        <label>Ghi chú <textarea name="note" rows="2"></textarea></label>
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p id="m-msg" role="status"></p>
+        <button class="btn" id="m-submit" type="submit">Xác nhận đặt bánh</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Thư viện (bản UMD, nạp trước module) -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
