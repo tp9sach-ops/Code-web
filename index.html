@@ -3098,8 +3098,11 @@ updateSummary = function () { _us7(); try { v7Refresh(); } catch (e) {} };
    ===================================================================== */
 var V8 = { err: '', ok: null, mod: null, T: null, inst: null, cv: null, pm: null, opened: false, top: 0, run: 0, p: 0, raf: 0, snd: true, ac: null };
 try { if (localStorage.getItem('nv9s_v8_snd') === '0') V8.snd = false; } catch (e) {}
+V8.build = '20261027c';
+try { localStorage.removeItem('nv9s_v8off'); if (localStorage.getItem('nv9s_v7view') === 'luoi') localStorage.removeItem('nv9s_v7view'); } catch (e) {}
+V7.view = 'tu';   // mặc định luôn là 3D; chỉ nút "Tắt 3D" mới lưu lựa chọn 2D
 var V8_CDN = 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-function v8Off() { try { return localStorage.getItem('nv9s_v8off') === '1'; } catch (e) { return false; } }
+function v8Off() { try { return localStorage.getItem('nv9s_v8_pref') === '2d'; } catch (e) { return false; } }
 function v8Webgl() { try { var c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (e) { return false; } }
 function v8Want() { return V8.ok !== false && !v8Off() && v8Webgl(); }
 function v8Kind(g) {
@@ -3127,13 +3130,13 @@ function v8Html() {
     '<button type="button" class="v8-hint" onclick="v8OpenCab(true)">Cuộn xuống để mở tủ ↓</button><div class="v8-load" id="v8load">Đang mở tủ bánh…</div></div>' +
     '<div id="v7panel"></div></div></div>' +
     '<div class="v7-car" id="v7car" style="display:none">' + cur.idx.map(v7Card).join('') + '</div>' +
-    '<div class="v8-links"><button type="button" class="v7-sw" onclick="v7View(\'luoi\')">Xem dạng lưới</button><button type="button" class="v7-sw" onclick="v8Disable()">Tắt 3D (dùng tủ 2D)</button></div>';
+    '<div class="v8-links"><button type="button" class="v7-sw" onclick="v7View(\'luoi\')">Xem dạng lưới</button><button type="button" class="v7-sw" onclick="v8Disable()">Tắt 3D (dùng tủ 2D)</button></div><div class="hint" style="text-align:center">Tủ 3D bản ' + V8.build + '</div>';
 }
 var _vh8 = v7Html;
 v7Html = function () {
   if (v8Want()) return v8Html();
   var h = _vh8();
-  if (V8.ok === false && !v8Off() && V7.view === 'tu' && !/class="empty"/.test(h)) h += '<div class="hint" style="text-align:center;margin:6px 0">3D chưa chạy được' + (V8.err ? ' (' + esc(V8.err) + ')' : '') + '. <button type="button" class="v7-sw" style="display:inline" onclick="v8Retry()">Thử lại 3D</button></div>';
+  if (V8.ok === false && !v8Off() && V7.view === 'tu' && !/class="empty"/.test(h)) h += '<div class="hint" style="text-align:center;margin:6px 0">Tủ 3D bản ' + V8.build + ' chưa chạy được' + (V8.err ? ' (' + esc(V8.err) + ')' : '') + '. <button type="button" class="v7-sw" style="display:inline" onclick="v8Retry()">Thử lại 3D</button></div>';
   return h;
 };
 function v8Price(r) {
@@ -3142,13 +3145,13 @@ function v8Price(r) {
   return p > 0 ? p : 0;
 }
 function v8PriceTag(r) { var p = v8Price(r); return p ? '<i class="v8-pr">' + fmtD(p) + '</i>' : ''; }
-function v8Retry() { V8.ok = null; V8.pm = null; V8.err = ''; try { localStorage.removeItem('nv9s_v8off'); } catch (e) {} _vv8('tu'); }
+function v8Retry() { V8.ok = null; V8.pm = null; V8.err = ''; try { localStorage.removeItem('nv9s_v8_pref'); } catch (e) {} _vv8('tu'); }
 
 function v8Load() {
   if (V8.pm) return V8.pm;
   var tryImp = function (u) { return import(u); };
   var modP = window.V8MOD ? Promise.resolve(window.V8MOD) : tryImp('./js/v8-3d.js');
-  var three = tryImp('./js/vendor/three.module.js').catch(function () { return tryImp(V8_CDN); });
+  var three = tryImp('./js/vendor/three.module.js').catch(function () { return tryImp(V8_CDN); }).catch(function () { return tryImp('https://unpkg.com/three@0.164.1/build/three.module.js'); }).catch(function () { return tryImp('https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/three.module.min.js'); });
   V8.pm = Promise.race([Promise.all([three, modP]), new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, 15000); })])
     .then(function (a) { V8.T = a[0]; V8.mod = a[1]; });
   V8.pm.catch(function () { V8.pm = null; });
@@ -3170,7 +3173,8 @@ function v8Mount() {
       start: V7.idx,
       onFocus: function (i) { v7Focus(i); v8Cap(); },
       onTap: function (i) { psOpen(i); },
-      onOpenReq: function () { v8OpenCab(true); }
+      onOpenReq: function () { v8OpenCab(true); },
+      onImgFail: function (k) { try { console.warn('V8: không nạp được ảnh bánh vào 3D (có thể do ảnh không cho phép CORS)', k); } catch (e) {} }
     });
     V8.inst.setItems(v8Items()); V8.ok = true;
     var vw = $('v8view'); if (vw) V8.inst.setTint(getComputedStyle(vw).getPropertyValue('--v7tint').trim() || '#f6efdf');
@@ -3203,12 +3207,16 @@ function v8Cap() {
   cap.innerHTML = '<b>' + esc(nameOf(r)) + '</b>' + v8PriceTag(r) + '<span class="v7-st ' + st[0] + '">' + esc(st[1]) + '</span>' + (ban > 0 ? '<em>Bán ' + ban + '</em>' : '');
   if (gi) gi.textContent = v8Short(nameOf(r));
 }
+function v8ImgUrls(u) {
+  var m = /[?&]id=([^&]+)/.exec(u || ''); if (!m) return [u];
+  return ['https://lh3.googleusercontent.com/d/' + m[1] + '=w500', 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w500', u];
+}
 function v8Imgs() {
   if (!V8.inst || !S.cur) return; var g = v8Cur(); if (!g) return;
-  g.idx.forEach(function (i) { var u = ''; try { u = imgOf(S.cur.rows[i]); } catch (e) {} if (u) V8.inst.setImage(i, u); });
+  g.idx.forEach(function (i) { var u = ''; try { u = imgOf(S.cur.rows[i]); } catch (e) {} if (u) V8.inst.setImage(i, v8ImgUrls(u)); });
 }
 function v8Step(d) { if (V8.inst) V8.inst.step(d); }
-function v8Disable() { try { localStorage.setItem('nv9s_v8off', '1'); } catch (e) {} v8Unmount(); try { _vv8('tu'); } catch (e) {} }
+function v8Disable() { try { localStorage.setItem('nv9s_v8_pref', '2d'); } catch (e) {} v8Unmount(); try { _vv8('tu'); } catch (e) {} }
 function v8Snd() {
   V8.snd = !V8.snd; try { localStorage.setItem('nv9s_v8_snd', V8.snd ? '1' : '0'); } catch (e) {}
   var b = $('v8snd'); if (b) b.innerHTML = '<i class="fa-solid ' + (V8.snd ? 'fa-volume-high' : 'fa-volume-xmark') + '"></i>'; v8Tick();
@@ -3233,7 +3241,7 @@ function v8PanelPrice() {
 var _vp8 = v7Panel; v7Panel = function () { _vp8(); try { v8PanelPrice(); } catch (e) {} };
 var _vc8 = v7Card; v7Card = function (i) { var h = _vc8(i); try { return h.replace(/(<div class="v7-st[^>]*>.*?<\/div>)<\/button>$/, '$1' + v8PriceTag(S.cur.rows[i]) + '</button>'); } catch (e) { return h; } };
 var _ac8 = applyCatalog; applyCatalog = function (x) { _ac8(x); try { if (S.cur && v7On()) { v7Panel(); v8Cap(); } } catch (e) {} };
-var _vv8 = v7View; v7View = function (v) { if (v === 'tu') { try { localStorage.removeItem('nv9s_v8off'); } catch (e) {} if (V8.ok === false) { V8.ok = null; V8.pm = null; } } _vv8(v); };
+var _vv8 = v7View; v7View = function (v) { if (v === 'tu') { try { localStorage.removeItem('nv9s_v8_pref'); } catch (e) {} if (V8.ok === false) { V8.ok = null; V8.pm = null; } } _vv8(v); if (v === 'luoi') { try { localStorage.removeItem('nv9s_v7view'); } catch (e) {} } };
 var _vs8 = v7Sell; v7Sell = function (i, pay) { _vs8(i, pay); v8Tick(); try { if (V8.inst) V8.inst.pulse(); } catch (e) {} };
 window.addEventListener('resize', function () { try { v8Size(); v8Scroll(); } catch (e) {} });
 document.addEventListener('keydown', function (e) {
@@ -3430,9 +3438,11 @@ function mount(T, canvas, H) {
     });
     cur = target = Math.max(0, its.findIndex((x) => x.k === H.start)); if (cur < 0) cur = target = 0; lastIdx = target;
   }
-  function setImage(k, url) {
-    const it = its.find((x) => x.k === k); if (!it || !url || it.img === url) return; it.img = url;
-    const im = new Image(); im.crossOrigin = 'anonymous';
+  function setImage(k, urls) {
+    const it = its.find((x) => x.k === k); urls = [].concat(urls || []).filter(Boolean); if (!it || !urls.length) return;
+    const key = urls.join('|'); if (it.img === key) return; it.img = key;
+    let n = 0; const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onerror = () => { n++; if (n < urls.length) im.src = urls[n]; else { it.img = ''; it.imgFail = true; if (H.onImgFail) H.onImgFail(k); } };
     im.onload = () => {
       if (dead || it.card || !its.includes(it)) return;
       const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1, kk = 1.15 / Math.max(iw, ih), w = iw * kk, h = ih * kk;
@@ -3442,7 +3452,7 @@ function mount(T, canvas, H) {
       track.push(gb, gf, mb, mf); const back = new T.Mesh(gb, mb), front = new T.Mesh(gf, mf); front.position.z = 0.025; card.add(back, front);
       it.spin.children[0].visible = false; it.spin.add(card); it.card = card; it.hh = h / 2; it.flat = true;
     };
-    im.onerror = () => {}; im.src = url;
+    im.src = urls[0];
   }
   function report() {
     if (!N) return; const idx = clamp(Math.round(target), 0, N - 1);
