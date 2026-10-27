@@ -17,7 +17,7 @@
  * BƯỚC DUY NHẤT PHẢI SỬA: điền SPREADSHEET_ID bên dưới, rồi chạy setupSheets() 1 lần.
  */
 
-var SPREADSHEET_ID = 'https://script.google.com/macros/s/AKfycbz5YhEpWfQKmOyhBpi61rtlbTxLuPoglg15mLMZ33mwqcOq23ZAuNe1K-QrlswS_uoaCg/exec';
+var SPREADSHEET_ID = '1Uldgf0QcU3ZT3pKxoh-L8H7qeMASr7ENLt0ykv4046M';
 var TZ = 'Asia/Ho_Chi_Minh';
 var APP_BUILD = '20261026a';
 var BACK_DAYS_MAX = 3;                       // được kết bù tối đa 3 ngày
