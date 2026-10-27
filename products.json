@@ -1,0 +1,12 @@
+{
+  "products": [
+    { "id": "sp1", "name": "Bông Lan Trứng Muối", "price": 35000, "desc": "Bông lan cuộn mềm xốp, sốt trứng muối béo mặn.", "stock": 12, "color": "#f2c14e", "type": "roll", "image": "" },
+    { "id": "sp2", "name": "Tiramisu", "price": 45000, "desc": "Cà phê, kem mascarpone và lớp cacao đắng nhẹ.", "stock": 4, "color": "#b07a54", "type": "round", "image": "" },
+    { "id": "sp3", "name": "Cupcake Dâu", "price": 28000, "desc": "Kem dâu tươi mịn trên nền bánh vani.", "stock": 0, "color": "#f48fb1", "type": "cupcake", "image": "" },
+    { "id": "sp4", "name": "Bánh Mì Bơ Tỏi", "price": 22000, "desc": "Vỏ giòn, ruột mềm, thơm bơ tỏi nướng.", "stock": 9, "color": "#d9a066", "type": "bread", "image": "" },
+    { "id": "sp5", "name": "Donut Matcha", "price": 25000, "desc": "Phủ matcha Nhật, rắc hạt màu vui mắt.", "stock": 2, "color": "#8bc34a", "type": "donut", "image": "" },
+    { "id": "sp6", "name": "Red Velvet", "price": 48000, "desc": "Nhung đỏ ẩm mịn, kem phô mai chua nhẹ.", "stock": 7, "color": "#c62839", "type": "round", "image": "" },
+    { "id": "sp7", "name": "Cuộn Cacao", "price": 32000, "desc": "Cuộn cacao đậm vị, nhân kem tươi.", "stock": 5, "color": "#6d4430", "type": "roll", "image": "" },
+    { "id": "sp8", "name": "Cupcake Chanh Dây", "price": 30000, "desc": "Chua ngọt thanh mát, kem bơ chanh dây.", "stock": 15, "color": "#ffd54a", "type": "cupcake", "image": "" }
+  ]
+}
