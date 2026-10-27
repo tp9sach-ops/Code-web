@@ -27,7 +27,7 @@ function loadScriptWithFallback_(urls, onDone) {
  * Lấy ở: Apps Script → Triển khai → Quản lý triển khai → Ứng dụng web → URL.
  */
 window.NV_CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbz5YhEpWfQKmOyhBpi61rtlbTxLuPoglg15mLMZ33mwqcOq23ZAuNe1K-QrlswS_uoaCg/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbz094Jsei7AE95Iw6_mVp1mb5a9XTvWjmUCtE2SG0N4KLWT2nMMCTMoRSYeeIBhWLzNSA/exec',
   timeoutMs: 60000,        // quá thời gian này coi như mất kết nối (tải ảnh được cộng thêm)
   uploadTimeoutMs: 120000, // riêng nvUploadAnh
   warmUp: true             // gọi ping khi mở trang để Apps Script "thức dậy" sớm
@@ -3081,6 +3081,7 @@ updateSummary = function () { _us7(); try { v7Refresh(); } catch (e) {} };
 .v8-pr{display:inline-block;font-style:normal;font-weight:900;font-size:13.5px;background:#e0a82e;color:#3b2a00;border-radius:12px;padding:2px 10px;}
 .v7-c .v8-pr{display:block;margin:4px auto 0;width:max-content;}
 .v8-cap .v8-pr{font-size:15px;}
+.v8-pr.np{background:#e9ecea;color:#5d6762;font-weight:700;}
 .v7-ph .v8-pr{margin-left:8px;font-size:14px;}
 @media (min-width:900px){.v8-wrap{margin:0 auto;max-width:1100px;border-radius:22px;overflow:clip;}.v8-stage .v7-p{max-width:720px;margin:0 auto;}}
 @media (max-height:520px){.v8-giant{display:none;}.v8-stage .v7-more{display:none;}}
@@ -3098,12 +3099,20 @@ updateSummary = function () { _us7(); try { v7Refresh(); } catch (e) {} };
    ===================================================================== */
 var V8 = { err: '', ok: null, mod: null, T: null, inst: null, cv: null, pm: null, opened: false, top: 0, run: 0, p: 0, raf: 0, snd: true, ac: null };
 try { if (localStorage.getItem('nv9s_v8_snd') === '0') V8.snd = false; } catch (e) {}
-V8.build = '20261027c';
+V8.build = '20261027d'; V8.fails = 0;
+try { if (sessionStorage.getItem('nv9s_v8_opened') === '1') V8.opened = true; } catch (e) {}
 try { localStorage.removeItem('nv9s_v8off'); if (localStorage.getItem('nv9s_v7view') === 'luoi') localStorage.removeItem('nv9s_v7view'); } catch (e) {}
 V7.view = 'tu';   // mặc định luôn là 3D; chỉ nút "Tắt 3D" mới lưu lựa chọn 2D
 var V8_CDN = 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
 function v8Off() { try { return localStorage.getItem('nv9s_v8_pref') === '2d'; } catch (e) { return false; } }
-function v8Webgl() { try { var c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (e) { return false; } }
+function v8Webgl() {
+  if (V8.gl !== undefined) return V8.gl;
+  try {
+    var c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'); V8.gl = !!(window.WebGLRenderingContext && g);
+    try { var x = g && g.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } catch (e) {}   // trả lại ngữ cảnh thử, tránh "too many WebGL contexts"
+  } catch (e) { V8.gl = false; }
+  return V8.gl;
+}
 function v8Want() { return V8.ok !== false && !v8Off() && v8Webgl(); }
 function v8Kind(g) {
   var n = String(g || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase();
@@ -3144,7 +3153,7 @@ function v8Price(r) {
   try { var nm = nrm(nameOf(r)); (S.catalog || []).forEach(function (x) { if (p > 0 || !x[1] || !(x[4] > 0)) return; var n = nrm(x[1]); if (nm.length > 3 && n && (n === nm || n.indexOf(nm) !== -1)) p = x[4]; }); } catch (e) {}
   return p > 0 ? p : 0;
 }
-function v8PriceTag(r) { var p = v8Price(r); return p ? '<i class="v8-pr">' + fmtD(p) + '</i>' : ''; }
+function v8PriceTag(r) { var p = v8Price(r); return p ? '<i class="v8-pr">' + fmtD(p) + '</i>' : '<i class="v8-pr np">Chưa có giá</i>'; }
 function v8Retry() { V8.ok = null; V8.pm = null; V8.err = ''; try { localStorage.removeItem('nv9s_v8_pref'); } catch (e) {} _vv8('tu'); }
 
 function v8Load() {
@@ -3152,7 +3161,7 @@ function v8Load() {
   var tryImp = function (u) { return import(u); };
   var modP = window.V8MOD ? Promise.resolve(window.V8MOD) : tryImp('./js/v8-3d.js');
   var three = tryImp('./js/vendor/three.module.js').catch(function () { return tryImp(V8_CDN); }).catch(function () { return tryImp('https://unpkg.com/three@0.164.1/build/three.module.js'); }).catch(function () { return tryImp('https://cdnjs.cloudflare.com/ajax/libs/three.js/0.164.1/three.module.min.js'); });
-  V8.pm = Promise.race([Promise.all([three, modP]), new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, 15000); })])
+  V8.pm = Promise.race([Promise.all([three, modP]), new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, 30000); })])
     .then(function (a) { V8.T = a[0]; V8.mod = a[1]; });
   V8.pm.catch(function () { V8.pm = null; });
   return V8.pm;
@@ -3166,6 +3175,7 @@ function v8Mount() {
   var cv = $('v8cv'); if (!cv || !v7On()) { if (V8.cv && !$('v8cv')) v8Unmount(); return; }
   if (V8.cv === cv && V8.inst) { v8Size(); v8Cap(); return; }
   v8Unmount(); V8.cv = cv; v8Size();
+  try { ensureCatalog().then(function () { try { v8Cap(); v7Panel(); } catch (e) {} }); } catch (e) {}
   var sc = $('caBody'); if (sc && !sc.__v8) { sc.__v8 = 1; sc.addEventListener('scroll', v8OnScroll, { passive: true }); }
   v8Load().then(function () {
     if ($('v8cv') !== cv || V8.cv !== cv) return;
@@ -3182,7 +3192,7 @@ function v8Mount() {
     v8Size(); v8Scroll(true); v8Cap(); v7Panel(); v8Imgs(); [800, 2500, 6000].forEach(function (t) { setTimeout(function () { try { v8Imgs(); } catch (e) {} }, t); });
   }).catch(function (e) {
     try { console.warn('V8 3D lỗi → dùng tủ 2D:', e && e.message); } catch (_) {}
-    V8.ok = false; V8.err = String((e && e.message) || e).slice(0, 80); v8Unmount(); try { _vv8('tu'); } catch (_) {}
+    V8.fails++; V8.ok = false; V8.err = String((e && e.message) || e).slice(0, 80); v8Unmount(); try { _vv8('tu'); } catch (_) {}
   });
 }
 function v8Size() {
@@ -3196,7 +3206,7 @@ function v8Scroll(first) {
   var sc = $('caBody'), st = $('v8stage'); if (!sc || !st) return;
   if (first === true && sc.scrollTop < V8.top) sc.scrollTop = V8.top + (V8.opened ? V8.run : 0);
   var p = Math.min(1, Math.max(0, (sc.scrollTop - V8.top) / Math.max(1, V8.run))); V8.p = p;
-  if (p >= 0.95) V8.opened = true;
+  if (p >= 0.95) { V8.opened = true; try { sessionStorage.setItem('nv9s_v8_opened', '1'); } catch (e) {} }
   st.classList.toggle('open', p >= 0.6); if (V8.inst) V8.inst.setProgress(p);
 }
 function v8OnScroll() { if (V8.raf) return; V8.raf = requestAnimationFrame(function () { V8.raf = 0; v8Scroll(); }); }
@@ -3244,6 +3254,8 @@ var _ac8 = applyCatalog; applyCatalog = function (x) { _ac8(x); try { if (S.cur 
 var _vv8 = v7View; v7View = function (v) { if (v === 'tu') { try { localStorage.removeItem('nv9s_v8_pref'); } catch (e) {} if (V8.ok === false) { V8.ok = null; V8.pm = null; } } _vv8(v); if (v === 'luoi') { try { localStorage.removeItem('nv9s_v7view'); } catch (e) {} } };
 var _vs8 = v7Sell; v7Sell = function (i, pay) { _vs8(i, pay); v8Tick(); try { if (V8.inst) V8.inst.pulse(); } catch (e) {} };
 window.addEventListener('resize', function () { try { v8Size(); v8Scroll(); } catch (e) {} });
+window.addEventListener('load', function () { setTimeout(function () { try { if (v8Want()) v8Load().catch(function () {}); } catch (e) {} }, 600); });   // nạp Three.js sẵn ngay khi mở trang
+var _rc8 = renderCa; renderCa = function () { if (V8.ok === false && V8.fails < 4 && !v8Off()) { V8.ok = null; V8.pm = null; } _rc8(); };
 document.addEventListener('keydown', function (e) {
   if (!V8.inst || !V8.cv || !V8.cv.isConnected || !v7On() || e.ctrlKey || e.metaKey || e.altKey) return;
   var t = (document.activeElement && document.activeElement.tagName) || ''; if (/INPUT|TEXTAREA|SELECT/.test(t)) return;
