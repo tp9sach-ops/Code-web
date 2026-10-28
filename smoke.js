@@ -9,7 +9,7 @@ const srv = http.createServer((q, r) => {
   let p = decodeURIComponent(q.url.split('?')[0]); if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!f.startsWith(ROOT) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); }
   r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
-  if (p === '/index.html') r.end(fs.readFileSync(f, 'utf8').replace('DIEN_URL_EXEC_O_DAY', 'http://localhost:5174/')); else fs.createReadStream(f).pipe(r);   // thay apiUrl bằng mock
+  if (p === '/index.html') r.end(fs.readFileSync(f, 'utf8').replace(/apiUrl: '[^']*'/, "apiUrl: 'http://localhost:5174/'")); else fs.createReadStream(f).pipe(r);   // thay apiUrl bằng mock
 }).listen(5173);
 const mock = spawn('node', [path.join(__dirname, 'mock-gas.js'), '5174'], { stdio: 'inherit' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

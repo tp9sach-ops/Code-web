@@ -4,7 +4,7 @@
 const http = require('http'), fs = require('fs'), path = require('path'), { spawn } = require('child_process'), { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..', 'public'), MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 const srv = http.createServer((q, r) => { let p = q.url.split('?')[0]; if (p === '/') p = '/index.html'; const f = path.join(ROOT, p); if (!fs.existsSync(f)) { r.writeHead(404); return r.end(); }
-  r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'text/plain' }); r.end(p === '/index.html' ? fs.readFileSync(f, 'utf8').replace('DIEN_URL_EXEC_O_DAY', 'http://localhost:5174/') : fs.readFileSync(f)); }).listen(5173);
+  r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'text/plain' }); r.end(p === '/index.html' ? fs.readFileSync(f, 'utf8').replace(/apiUrl: '[^']*'/, "apiUrl: 'http://localhost:5174/'") : fs.readFileSync(f)); }).listen(5173);
 const mock = spawn('node', [path.join(__dirname, 'mock-gas.js'), '5174'], { stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); let fails = 0;
 const check = (n, c, x) => { console.log((c ? '  ok - ' : '  LỖI - ') + n + (x ? ' ' + x : '')); if (!c) fails++; };
@@ -13,7 +13,7 @@ async function setup(browser, mode) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }), page = await ctx.newPage(), errs = []; page.on('pageerror', (e) => errs.push(String(e)));
   await page.route(/cdnjs\.cloudflare|fonts\.g|jsdelivr|unpkg/, (r) => r.abort());
   if (mode === 'fake') { await page.route('**/js/vendor/three.module.js', (r) => r.fulfill({ contentType: 'text/javascript', body: 'export const x=1' })); await page.route('**/js/v8-3d.js', (r) => r.fulfill({ contentType: 'text/javascript', body: FAKE3D })); }
-  await page.goto('http://localhost:5173/'); await page.waitForSelector('#login:not(.hide)'); await page.fill('#lUser', 'nv1'); await page.fill('#lPass', 'pass1'); await page.click('#lBtn'); await page.waitForSelector('#v-home .shift');
+  await page.goto('http://localhost:5173/'); if (mode === 'fake') await page.evaluate(() => { delete window.V8MOD; }); await page.waitForSelector('#login:not(.hide)'); await page.fill('#lUser', 'nv1'); await page.fill('#lPass', 'pass1'); await page.click('#lBtn'); await page.waitForSelector('#v-home .shift');
   await page.evaluate(() => {
     S.prices = S.prices || {}; const mk = (g, n, td) => { S.prices['SKU' + n] = 50000; return { muc: g + n, nhom: 'BANH', ten: g + ' — ' + n, items: ['SKU' + n], auto: null, src: '', tonDau: td, nhap: 0, ban: 0, xuat: 0, tang: 0, kiem: '', ghiChu: '', tdLyDo: '', show: true, open: false, bl: [] }; };
     S.cur = { ngay: S.today, ca: 'Sang', status: 'Nhap', version: 1, locked: false, exists: true, m2: true, dirty: false, rev: 0, chain: Promise.resolve(), thuchi: [], tien: {}, giamGia: '', giaiTrinh: '', khachDat: [],
@@ -24,7 +24,8 @@ async function setup(browser, mode) {
 }
 (async () => {
   await sleep(500); const browser = await chromium.launch();
-  { const { page, errs } = await setup(browser, 'nolib'); await sleep(1500);
+  { const { page, errs } = await setup(browser, 'nolib'); // V8MOD thật có sẵn nhưng Three.js tải lỗi
+    await sleep(1500);
     check('A: Three.js tải lỗi → quay về tủ 2.5D (.v7-cab)', await page.evaluate(() => !!document.querySelector('.v7-cab') && !document.getElementById('v8cv')));
     check('A: V8.ok=false, không lỗi JS', (await page.evaluate(() => V8.ok)) === false && errs.length === 0, errs.join('|')); await page.screenshot({ path: 'out/v8_fallback.png' }); await page.close(); }
   { const { page, errs } = await setup(browser, 'fake'); await sleep(800);
@@ -44,6 +45,12 @@ async function setup(browser, mode) {
     await page.evaluate(() => v7Grp(1)); await sleep(400);
     check('B: đổi nhóm → dựng lại 3D với nhóm Lava (kind=lava, 1 bánh)', await page.evaluate(() => __f.items.length === 1 && __f.items[0].kind === 'lava'));
     const bd = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth); check('B: không cuộn ngang', bd <= 1, bd + 'px');
+    check('B: bảng +1 và chú thích hiện giá niêm yết (50.000đ)', await page.evaluate(() => /50\.000/.test(document.getElementById('v7panel').textContent) && /50\.000/.test(document.getElementById('v8cap').textContent)));
+    await page.evaluate(() => v7View('luoi')); await sleep(200); const gridOk = await page.evaluate(() => !document.getElementById('v8cv'));
+    await page.evaluate(() => v7View('tu')); await sleep(500);
+    check('B: sang dạng lưới rồi quay lại → 3D dựng lại được', gridOk && await page.evaluate(() => !!document.getElementById('v8cv') && V8.inst));
+    await page.evaluate(() => v8Disable()); await sleep(200); await page.evaluate(() => v7View('tu')); await sleep(500);
+    check('B: sau "Tắt 3D", bấm Xem dạng Tủ bánh → 3D bật lại', await page.evaluate(() => !!document.getElementById('v8cv')));
     await page.evaluate(() => goStep(2)); await sleep(300);
     check('B: sang bước ② → hủy 3D (dispose)', await page.evaluate(() => __f.calls.includes('dispose') && !document.getElementById('v8cv')));
     check('B: không lỗi JS', errs.length === 0, errs.join('|')); await page.screenshot({ path: 'out/v8_fake.png' }); await page.close(); }
